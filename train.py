@@ -158,6 +158,8 @@ min_samples_per_station = 12 * 20; # require a minimum of 20 years of data
 
 stations = [];
 trends = [];
+min_year = 999999;
+max_year = 0;
 
 while(1):
 
@@ -189,6 +191,13 @@ while(1):
         y = year_data_class();
 
         y.year = int(year_tokens[0]);
+
+        if(y.year < min_year):
+            min_year = y.year;
+
+        if(y.year > max_year):
+            max_year = y.year;
+
         y.jan = float(year_tokens[1]);  y.feb = float(year_tokens[2]);  y.mar = float(year_tokens[3]);
         y.apr = float(year_tokens[4]);  y.may = float(year_tokens[5]);  y.jun = float(year_tokens[6]);
         y.jul = float(year_tokens[7]);  y.aug = float(year_tokens[8]);  y.sep = float(year_tokens[9]); 
@@ -204,9 +213,8 @@ while(1):
         print(num_stations_read);
 
 
-
 for i in range(len(stations)):
-    useful, trend = get_trend(0, 2022, min_samples_per_station, stations[i])
+    useful, trend = get_trend(min_year, max_year, min_samples_per_station, stations[i])
     
     if(useful):
         trends.append(trend);
