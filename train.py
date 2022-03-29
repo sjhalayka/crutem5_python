@@ -47,19 +47,99 @@ class Net(torch.nn.Module):
         return x
 
 
-class year_data:
-    station_id = 0;
-    year = 0;
-    jan = 0.0; feb = 0.0; mar = 0.0;
-    apr = 0.0; may = 0.0; jun = 0.0;
-    jul = 0.0; aug = 0.0; sep = 0.0;
-    oct = 0.0; nov = 0.0; dec = 0.0;
+class year_data_class:
 
+    def __init__(self):
+        self.year = 0;
+        self.jan = 0.0; self.feb = 0.0; self.mar = 0.0;
+        self.apr = 0.0; self.may = 0.0; self.jun = 0.0;
+        self.jul = 0.0; self.aug = 0.0; self.sep = 0.0;
+        self.oct = 0.0; self.nov = 0.0; self.dec = 0.0;
+
+        year = 0;
+        jan = 0.0; feb = 0.0; mar = 0.0;
+        apr = 0.0; may = 0.0; jun = 0.0;
+        jul = 0.0; aug = 0.0; sep = 0.0;
+        oct = 0.0; nov = 0.0; dec = 0.0;
+
+class station_data_class:
+
+    def __init__(self):
+        self.station_id = 0;
+        self.year_data_list = [];
+
+    station_id = 0;
+    year_data_list = [];
 
 
 def regline_slope(x, y):
     slope, intercept = np.polyfit(x, y, 1);
     return slope;
+
+
+
+def get_trend(min_year, max_year, min_samples_per_station, sd):
+
+    x = list()
+    y = list()
+
+    for i in range(len(sd.year_data_list)):
+
+        if((sd.year_data_list[i].year < min_year) or (sd.year_data_list[i].year > max_year)):
+            continue;
+
+        if(sd.year_data_list[i].jan != -999):
+            x.append(sd.year_data_list[i].year); y.append(sd.year_data_list[i].jan);
+
+        if(sd.year_data_list[i].feb != -999):
+            x.append(sd.year_data_list[i].year); y.append(sd.year_data_list[i].feb);
+
+        if(sd.year_data_list[i].mar != -999):
+            x.append(sd.year_data_list[i].year);  y.append(sd.year_data_list[i].mar);
+
+        if(sd.year_data_list[i].apr != -999):
+            x.append(sd.year_data_list[i].year);  y.append(sd.year_data_list[i].apr);
+
+        if(sd.year_data_list[i].may != -999):
+            x.append(sd.year_data_list[i].year);   y.append(sd.year_data_list[i].may);
+
+        if(sd.year_data_list[i].jun != -999):
+            x.append(sd.year_data_list[i].year);  y.append(sd.year_data_list[i].jun);
+
+        if(sd.year_data_list[i].jul != -999):
+            x.append(sd.year_data_list[i].year);   y.append(sd.year_data_list[i].jul);
+
+        if(sd.year_data_list[i].aug != -999):
+            x.append(sd.year_data_list[i].year);   y.append(sd.year_data_list[i].aug);
+
+        if(sd.year_data_list[i].sep != -999):
+            x.append(sd.year_data_list[i].year);   y.append(sd.year_data_list[i].sep);
+
+        if(sd.year_data_list[i].oct != -999):
+            x.append(sd.year_data_list[i].year);   y.append(sd.year_data_list[i].oct);
+
+        if(sd.year_data_list[i].nov != -999):
+            x.append(sd.year_data_list[i].year);  y.append(sd.year_data_list[i].nov);
+
+        if(sd.year_data_list[i].dec != -999):
+            x.append(sd.year_data_list[i].year);   y.append(sd.year_data_list[i].dec);
+
+
+    if(len(x) == 0):
+        print("No valid records in date range found");
+        return 0, 0.0;
+    else:
+        print(len(x));
+
+    # Go to next station if this one hasn't enough valid xy data
+    if(len(x) < min_samples_per_station):
+       print("Not enough data for station " + str(sd.station_id))
+       return 0, 0.0;
+
+    # Save this station's trend
+
+    return 1, regline_slope(x, y);
+
 
 
 
@@ -74,10 +154,10 @@ else:
 
 num_stations_read = 0;
 min_samples_per_station = 12 * 20; # require a minimum of 20 years of data
-min_year = 0;
-max_year = 2022;
 
-trends = list();
+
+stations = [];
+trends = [];
 
 while(1):
 
@@ -87,13 +167,13 @@ while(1):
     if(len(s) == 0):
         break;
     
-    station_id = int(s[0:6]);
+    sd = station_data_class();
+
+    sd.station_id = int(s[0:6]);
     first_year = int(s[56:60]);
     last_year = int(s[60:64]);
 
     num_years = 1 + last_year - first_year;
-
-    year_data_list = list();
 
     for j in range(num_years):
 
@@ -106,22 +186,41 @@ while(1):
         year_tokens = list();
         year_tokens = t.split();
 
-        y = year_data();
-        y.station_id = station_id;
-        y.year = int(year_tokens[0]);
+        y = year_data_class();
 
+        y.year = int(year_tokens[0]);
         y.jan = float(year_tokens[1]);  y.feb = float(year_tokens[2]);  y.mar = float(year_tokens[3]);
         y.apr = float(year_tokens[4]);  y.may = float(year_tokens[5]);  y.jun = float(year_tokens[6]);
         y.jul = float(year_tokens[7]);  y.aug = float(year_tokens[8]);  y.sep = float(year_tokens[9]); 
         y.oct = float(year_tokens[10]); y.nov = float(year_tokens[11]); y.dec = float(year_tokens[12]);
 
-        year_data_list.append(y);
+        sd.year_data_list.append(y);
+        
+    stations.append(sd);
+    sd = station_data_class();
 
     num_stations_read = num_stations_read + 1
 
     if(num_stations_read % 1000 == 0):
         print(num_stations_read);
 
+for i in range(len(stations)):
+    useful, trend = get_trend(0, 2022, min_samples_per_station, stations[i])
+    
+    if(useful):
+        trends.append(trend);
+
+print(np.mean(trends));
+print(np.std(trends));
+
+
+
+exit();
+
+
+
+
+"""
 
     # done loading data from file
 
@@ -134,52 +233,40 @@ while(1):
             continue;
 
         if(year_data_list[i].jan != -999):
-            x.append(year_data_list[i].year); 
-            y.append(year_data_list[i].jan);
+            x.append(year_data_list[i].year); y.append(year_data_list[i].jan);
 
         if(year_data_list[i].feb != -999):
-            x.append(year_data_list[i].year); 
-            y.append(year_data_list[i].feb);
+            x.append(year_data_list[i].year); y.append(year_data_list[i].feb);
 
         if(year_data_list[i].mar != -999):
-            x.append(year_data_list[i].year); 
-            y.append(year_data_list[i].mar);
+            x.append(year_data_list[i].year);  y.append(year_data_list[i].mar);
 
         if(year_data_list[i].apr != -999):
-            x.append(year_data_list[i].year); 
-            y.append(year_data_list[i].apr);
+            x.append(year_data_list[i].year);  y.append(year_data_list[i].apr);
 
         if(year_data_list[i].may != -999):
-            x.append(year_data_list[i].year); 
-            y.append(year_data_list[i].may);
+            x.append(year_data_list[i].year);   y.append(year_data_list[i].may);
 
         if(year_data_list[i].jun != -999):
-            x.append(year_data_list[i].year); 
-            y.append(year_data_list[i].jun);
+            x.append(year_data_list[i].year);  y.append(year_data_list[i].jun);
 
         if(year_data_list[i].jul != -999):
-            x.append(year_data_list[i].year); 
-            y.append(year_data_list[i].jul);
+            x.append(year_data_list[i].year);   y.append(year_data_list[i].jul);
 
         if(year_data_list[i].aug != -999):
-            x.append(year_data_list[i].year); 
-            y.append(year_data_list[i].aug);
+            x.append(year_data_list[i].year);   y.append(year_data_list[i].aug);
 
         if(year_data_list[i].sep != -999):
-            x.append(year_data_list[i].year); 
-            y.append(year_data_list[i].sep);
+            x.append(year_data_list[i].year);   y.append(year_data_list[i].sep);
 
         if(year_data_list[i].oct != -999):
-            x.append(year_data_list[i].year); 
-            y.append(year_data_list[i].oct);
+            x.append(year_data_list[i].year);   y.append(year_data_list[i].oct);
 
         if(year_data_list[i].nov != -999):
-            x.append(year_data_list[i].year); 
-            y.append(year_data_list[i].nov);
+            x.append(year_data_list[i].year);  y.append(year_data_list[i].nov);
 
         if(year_data_list[i].dec != -999):
-            x.append(year_data_list[i].year); 
-            y.append(year_data_list[i].dec);
+            x.append(year_data_list[i].year);   y.append(year_data_list[i].dec);
 
 
     if(len(x) == 0):
@@ -194,6 +281,8 @@ while(1):
     else:
         # Save this station's trend
         trends.append(regline_slope(x, y));  #c(trends, coefficients(lm(y~x))[[2]])
+
+"""
 
 
 print(str(num_stations_read) + " stations processed altogether.");
