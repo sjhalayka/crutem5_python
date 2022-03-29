@@ -126,14 +126,14 @@ def get_trend(min_year, max_year, min_samples_per_station, sd):
 
 
     if(len(x) == 0):
-        print("No valid records in date range found");
+        #print("No valid records in date range found");
         return 0, 0.0;
-    else:
-        print(len(x));
+    #else:
+        #print(len(x));
 
     # Go to next station if this one hasn't enough valid xy data
     if(len(x) < min_samples_per_station):
-       print("Not enough data for station " + str(sd.station_id))
+       #print("Not enough data for station " + str(sd.station_id))
        return 0, 0.0;
 
     # Save this station's trend
@@ -203,6 +203,8 @@ while(1):
 
     if(num_stations_read % 1000 == 0):
         print(num_stations_read);
+
+
 
 for i in range(len(stations)):
     useful, trend = get_trend(0, 2022, min_samples_per_station, stations[i])
