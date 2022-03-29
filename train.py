@@ -11,7 +11,7 @@ from os import path
 
 num_components = 1
 threshold = 4.0
-num_epochs = 10000
+num_epochs = 1000
 
 
 def gt_function(in_a, in_b, min_samples_per_station, stations):
@@ -247,7 +247,7 @@ while(1):
     if(num_stations_read % 1000 == 0):
         break;#print(num_stations_read);
 
-
+"""
 for i in range(len(stations)):
     useful, trend = get_trend(min_year, max_year, min_samples_per_station, stations[i])
     
@@ -258,7 +258,7 @@ for i in range(len(stations)):
 print(str(num_stations_read) + " stations processed altogether.");
 print(str(len(trends)) + " stations used.");
 print(str(np.mean(trends)) + " +/-" + str(np.std(trends)));
-
+"""
 
 torch.manual_seed(123);
 
