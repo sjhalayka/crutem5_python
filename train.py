@@ -14,36 +14,59 @@ threshold = 4.0
 num_epochs = 10000
 
 
-def traditional_mul(in_a, in_b):
+def gt_function(in_a, in_b, min_samples_per_station, stations):
 
-  out = np.zeros([num_components], np.float32)
+    trends = [];
 
-  out[0] = in_a[0] * in_b[0]
+    if(in_a > in_b):
+        temp = in_a;
+        in_a = in_b;
+        in_b = temp;
     
-  return out.T;
+    print(str(in_a) + " " + str(in_b));
+
+    for i in range(len(stations)):
+        useful, trend = get_trend(in_a, in_b, min_samples_per_station, stations[i])
+    
+        if(useful):
+            trends.append(trend);
+
+    if(len(trends) == 0):
+        return math.nan, math.nan;
+
+    return np.mean(trends), np.std(trends);
+   
+
+def ground_truth(batch, min_samples_per_station, stations):
+
+    means = [];
+    stddevs = [];
+
+    for i in range(batch.shape[0]):
+        mean, stddev = gt_function(batch[i][0], batch[i][1], min_samples_per_station, stations);
+
+        means.append(mean);
+        stddevs.append(stddev);
+ 
+    return means, stddevs;
+    
 
 
-def ground_truth(batch):
-  truth = np.zeros([batch.shape[0],num_components],np.float32);
-  for i in range(batch.shape[0]):
-    a = batch[i, 0:num_components]
-    b = batch[i, num_components:num_components*2]
-    truth[i,:] = traditional_mul(a, b);
-  return truth;
+
 
 class Net(torch.nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.hidden1 = torch.nn.Linear(num_components*2, 32*num_components)
-        self.hidden2 = torch.nn.Linear(32*num_components, 16*num_components) 
-        self.hidden3 = torch.nn.Linear(16*num_components, 8*num_components)
-        self.predict = torch.nn.Linear(8*num_components, num_components)
+        self.hidden1 = torch.nn.Linear(2, 32);
+        self.hidden2 = torch.nn.Linear(32 , 16 ); 
+        self.hidden3 = torch.nn.Linear(16 , 8 );
+        self.predict = torch.nn.Linear(8 , 2);
 
     def forward(self, x):
-        x = torch.tanh(self.hidden1(x))      
-        x = torch.tanh(self.hidden2(x))
-        x = torch.tanh(self.hidden3(x))
-        x = self.predict(x)             # linear output
+        x = torch.tanh(self.hidden1(x));
+        x = torch.tanh(self.hidden2(x));
+        x = torch.tanh(self.hidden3(x));
+        x = self.predict(x);   # linear output
         return x
 
 
@@ -89,40 +112,52 @@ def get_trend(min_year, max_year, min_samples_per_station, sd):
             continue;
 
         if(sd.year_data_list[i].jan != -999):
-            x.append(sd.year_data_list[i].year); y.append(sd.year_data_list[i].jan);
+            x.append(sd.year_data_list[i].year); 
+            y.append(sd.year_data_list[i].jan);
 
         if(sd.year_data_list[i].feb != -999):
-            x.append(sd.year_data_list[i].year); y.append(sd.year_data_list[i].feb);
+            x.append(sd.year_data_list[i].year); 
+            y.append(sd.year_data_list[i].feb);
 
         if(sd.year_data_list[i].mar != -999):
-            x.append(sd.year_data_list[i].year);  y.append(sd.year_data_list[i].mar);
+            x.append(sd.year_data_list[i].year);  
+            y.append(sd.year_data_list[i].mar);
 
         if(sd.year_data_list[i].apr != -999):
-            x.append(sd.year_data_list[i].year);  y.append(sd.year_data_list[i].apr);
+            x.append(sd.year_data_list[i].year);  
+            y.append(sd.year_data_list[i].apr);
 
         if(sd.year_data_list[i].may != -999):
-            x.append(sd.year_data_list[i].year);   y.append(sd.year_data_list[i].may);
+            x.append(sd.year_data_list[i].year);   
+            y.append(sd.year_data_list[i].may);
 
         if(sd.year_data_list[i].jun != -999):
-            x.append(sd.year_data_list[i].year);  y.append(sd.year_data_list[i].jun);
+            x.append(sd.year_data_list[i].year);  
+            y.append(sd.year_data_list[i].jun);
 
         if(sd.year_data_list[i].jul != -999):
-            x.append(sd.year_data_list[i].year);   y.append(sd.year_data_list[i].jul);
+            x.append(sd.year_data_list[i].year);   
+            y.append(sd.year_data_list[i].jul);
 
         if(sd.year_data_list[i].aug != -999):
-            x.append(sd.year_data_list[i].year);   y.append(sd.year_data_list[i].aug);
+            x.append(sd.year_data_list[i].year);   
+            y.append(sd.year_data_list[i].aug);
 
         if(sd.year_data_list[i].sep != -999):
-            x.append(sd.year_data_list[i].year);   y.append(sd.year_data_list[i].sep);
+            x.append(sd.year_data_list[i].year);   
+            y.append(sd.year_data_list[i].sep);
 
         if(sd.year_data_list[i].oct != -999):
-            x.append(sd.year_data_list[i].year);   y.append(sd.year_data_list[i].oct);
+            x.append(sd.year_data_list[i].year);   
+            y.append(sd.year_data_list[i].oct);
 
         if(sd.year_data_list[i].nov != -999):
-            x.append(sd.year_data_list[i].year);  y.append(sd.year_data_list[i].nov);
+            x.append(sd.year_data_list[i].year);  
+            y.append(sd.year_data_list[i].nov);
 
         if(sd.year_data_list[i].dec != -999):
-            x.append(sd.year_data_list[i].year);   y.append(sd.year_data_list[i].dec);
+            x.append(sd.year_data_list[i].year);   
+            y.append(sd.year_data_list[i].dec);
 
 
     if(len(x) == 0):
@@ -158,7 +193,7 @@ min_samples_per_station = 12 * 20; # require a minimum of 20 years of data
 
 stations = [];
 trends = [];
-min_year = 999999;
+min_year = 9999;
 max_year = 0;
 
 while(1):
@@ -210,7 +245,7 @@ while(1):
     num_stations_read = num_stations_read + 1
 
     if(num_stations_read % 1000 == 0):
-        print(num_stations_read);
+        break;#print(num_stations_read);
 
 
 for i in range(len(stations)):
@@ -225,35 +260,61 @@ print(str(len(trends)) + " stations used.");
 print(str(np.mean(trends)) + " +/-" + str(np.std(trends)));
 
 
-exit()
-
-
+torch.manual_seed(123);
 
 
 net = Net()
 
-if path.exists('weights_' + str(num_components) + '_' + str(num_epochs) + '.pth'):
+if 0:#path.exists('weights_' + str(num_components) + '_' + str(num_epochs) + '.pth'):
     net.load_state_dict(torch.load('weights_' + str(num_components) + '_' + str(num_epochs) + '.pth'))
     print("loaded file successfully")
 else:
     print("training...")
 
-    optimizer = torch.optim.Adam(net.parameters(), lr=0.0005)
-    loss_func = torch.nn.MSELoss()
+    optimizer = torch.optim.Adam(net.parameters(), lr=0.0005);
+    loss_func = torch.nn.MSELoss();
+
+    max_training_samples = 10;
 
     for epoch in range(num_epochs):
 
-      batch = threshold * (torch.rand((100,num_components*2),dtype=torch.float32) * 2 - 1)
+      batch = torch.randint(min_year, max_year + 1, (max_training_samples, num_components*2));
+      batch = batch.float();
+      means, stddevs = ground_truth(batch, min_samples_per_station, stations);
 
-      gt = ground_truth(batch.numpy())
-      x = Variable(batch)
-      y = Variable(torch.from_numpy(gt))
+      gt = torch.zeros(max_training_samples, num_components*2, dtype=torch.float32);
 
-      prediction = net(x)     
+      valid_count = 0;
+
+      for i in range(gt.shape[0]):
+          if(math.isnan(means[i]) == False and math.isnan(stddevs[i]) == False):
+            valid_count = valid_count + 1;
+
+      #print(valid_count);
+
+      if(valid_count == 0):
+        continue;
+
+      batch_trimmed = torch.zeros(valid_count, num_components*2, dtype=torch.float32);
+      gt_trimmed = torch.zeros(valid_count, num_components*2, dtype=torch.float32);
+      
+      index = 0;
+
+      for i in range(gt.shape[0]):
+          if(math.isnan(means[i]) == False and math.isnan(stddevs[i]) == False):
+            gt_trimmed[index][0] = means[i];
+            gt_trimmed[index][1] = stddevs[i];
+            batch_trimmed[index] = batch[i];
+            index = index + 1;
+
+      x = Variable(batch_trimmed);
+      y = Variable(gt_trimmed);
+
+      prediction = net(x)    
       loss = loss_func(prediction, y)
 
-      if epoch % 500 == 0:
-        print(epoch,loss)
+      #if epoch % 500 == 0:
+      print(epoch,loss);
   
       optimizer.zero_grad()   # clear gradients for next train
       loss.backward()         # backpropagation, compute gradients
@@ -262,6 +323,8 @@ else:
     torch.save(net.state_dict(), 'weights_' + str(num_components) + '_' + str(num_epochs) + '.pth')
 
 
+
+"""
 batch = threshold*(torch.rand((10, num_components*2),dtype=torch.float32) * 2 - 1)
 gt = ground_truth(batch.numpy())
 prediction = net(batch).detach().numpy()
@@ -269,5 +332,4 @@ prediction = net(batch).detach().numpy()
 print(gt)
 print("\n")
 print(prediction)
-
-
+"""
