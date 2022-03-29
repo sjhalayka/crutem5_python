@@ -197,7 +197,6 @@ while(1):
         sd.year_data_list.append(y);
         
     stations.append(sd);
-    sd = station_data_class();
 
     num_stations_read = num_stations_read + 1
 
@@ -211,80 +210,6 @@ for i in range(len(stations)):
     
     if(useful):
         trends.append(trend);
-
-print(np.mean(trends));
-print(np.std(trends));
-
-
-
-exit();
-
-
-
-
-"""
-
-    # done loading data from file
-
-    x = list()
-    y = list()
-
-    for i in range(len(year_data_list)):
-
-        if((year_data_list[i].year < min_year) or (year_data_list[i].year > max_year)):
-            continue;
-
-        if(year_data_list[i].jan != -999):
-            x.append(year_data_list[i].year); y.append(year_data_list[i].jan);
-
-        if(year_data_list[i].feb != -999):
-            x.append(year_data_list[i].year); y.append(year_data_list[i].feb);
-
-        if(year_data_list[i].mar != -999):
-            x.append(year_data_list[i].year);  y.append(year_data_list[i].mar);
-
-        if(year_data_list[i].apr != -999):
-            x.append(year_data_list[i].year);  y.append(year_data_list[i].apr);
-
-        if(year_data_list[i].may != -999):
-            x.append(year_data_list[i].year);   y.append(year_data_list[i].may);
-
-        if(year_data_list[i].jun != -999):
-            x.append(year_data_list[i].year);  y.append(year_data_list[i].jun);
-
-        if(year_data_list[i].jul != -999):
-            x.append(year_data_list[i].year);   y.append(year_data_list[i].jul);
-
-        if(year_data_list[i].aug != -999):
-            x.append(year_data_list[i].year);   y.append(year_data_list[i].aug);
-
-        if(year_data_list[i].sep != -999):
-            x.append(year_data_list[i].year);   y.append(year_data_list[i].sep);
-
-        if(year_data_list[i].oct != -999):
-            x.append(year_data_list[i].year);   y.append(year_data_list[i].oct);
-
-        if(year_data_list[i].nov != -999):
-            x.append(year_data_list[i].year);  y.append(year_data_list[i].nov);
-
-        if(year_data_list[i].dec != -999):
-            x.append(year_data_list[i].year);   y.append(year_data_list[i].dec);
-
-
-    if(len(x) == 0):
-       # print("No valid records in date range found");
-        continue;
-
-
-    # Go to next station if this one hasn't enough valid xy data
-    if(len(x) < min_samples_per_station):
-       #print("Not enough data for station " + str(station_id))
-        continue;
-    else:
-        # Save this station's trend
-        trends.append(regline_slope(x, y));  #c(trends, coefficients(lm(y~x))[[2]])
-
-"""
 
 
 print(str(num_stations_read) + " stations processed altogether.");
