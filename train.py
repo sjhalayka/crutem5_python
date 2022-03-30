@@ -11,7 +11,7 @@ from os import path
 
 
 
-num_components = 1
+num_components = 1 # we're dealing with scalars
 
 
 def gt_function(in_a, in_b, min_samples_per_station, p_years, p_jans, p_febs, p_mars, p_aprs, p_mays, p_juns, p_juls, p_augs, p_seps, p_octs, p_novs, p_decs):
@@ -180,20 +180,20 @@ else:
 
 
 
-global_station_ids = [0];
-global_years = [[0]];
-global_jans = [[0]];
-global_febs = [[0]];
-global_mars = [[0]];
-global_aprs = [[0]];
-global_mays = [[0]];
-global_juns = [[0]];
-global_juls = [[0]];
-global_augs = [[0]];
-global_seps = [[0]];
-global_octs = [[0]];
-global_novs = [[0]];
-global_decs = [[0]];
+global_station_ids = [];
+global_years = [[]];
+global_jans = [[]];
+global_febs = [[]];
+global_mars = [[]];
+global_aprs = [[]];
+global_mays = [[]];
+global_juns = [[]];
+global_juls = [[]];
+global_augs = [[]];
+global_seps = [[]];
+global_octs = [[]];
+global_novs = [[]];
+global_decs = [[]];
 
 
 num_stations_read = 0;
@@ -320,14 +320,9 @@ print(str(np.mean(trends)) + " +/-" + str(np.std(trends)));
 
 
 
-torch.manual_seed(123);
+#torch.manual_seed(123);
 
 num_epochs = 100
-
-
-
-
-
 
 net = Net()
 
@@ -340,7 +335,7 @@ else:
     optimizer = torch.optim.Adam(net.parameters(), lr=0.0005);
     loss_func = torch.nn.MSELoss();
 
-    max_training_samples = 25;
+    max_training_samples = 10;
 
     for epoch in range(num_epochs):
 
@@ -373,7 +368,7 @@ else:
       x = Variable(torch.tensor(batch_trimmed));
       y = Variable(torch.tensor(gt_trimmed));
 
-      prediction = net(x)    
+      prediction = net(x)
       loss = loss_func(prediction, y)
 
       #if epoch % 500 == 0:
@@ -393,4 +388,5 @@ batch[1] = 2040;
 
 prediction = net(batch).detach();
 
+print("Temperature anomaly trend (tenths of degree per year, or equivalently degrees per decade)");
 print(prediction)
