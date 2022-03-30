@@ -3,6 +3,8 @@ import math
 import torch
 from torch.autograd import Variable
 
+import numba
+
 import os.path
 from os import path
 
@@ -10,10 +12,6 @@ from os import path
 
 
 num_components = 1
-threshold = 4.0
-num_epochs = 1000
-
-
 
 
 def gt_function(in_a, in_b, min_samples_per_station, p_years, p_jans, p_febs, p_mars, p_aprs, p_mays, p_juns, p_juls, p_augs, p_seps, p_octs, p_novs, p_decs):
@@ -38,7 +36,6 @@ def gt_function(in_a, in_b, min_samples_per_station, p_years, p_jans, p_febs, p_
 
     return np.mean(trends), np.std(trends);
    
-
 
 def ground_truth(batch, min_samples_per_stations, p_years, p_jans, p_febs, p_mars, p_aprs, p_mays, p_juns, p_juls, p_augs, p_seps, p_octs, p_novs, p_decs):
 
@@ -202,8 +199,6 @@ global_decs = [[0]];
 num_stations_read = 0;
 min_samples_per_station = 12 * 20; # require a minimum of 20 years of data
 
-
-#stations = [];
 trends = [];
 min_year = 9999;
 max_year = 0;
@@ -296,7 +291,7 @@ while(1):
 
 
     if(num_stations_read % 1000 == 0):
-       break;#print(num_stations_read);
+       print(num_stations_read);
 
 
 
@@ -317,20 +312,26 @@ for i in range(len(global_station_ids)):
 print(str(num_stations_read) + " stations processed altogether.");
 print(str(len(trends)) + " stations used.");
 print(str(np.mean(trends)) + " +/-" + str(np.std(trends)));
-
-
-exit();
 """
+
+
+
 
 
 
 
 torch.manual_seed(123);
 
+num_epochs = 100
+
+
+
+
+
 
 net = Net()
 
-if 0:#path.exists('weights_' + str(num_components) + '_' + str(num_epochs) + '.pth'):
+if path.exists('weights_' + str(num_components) + '_' + str(num_epochs) + '.pth'):
     net.load_state_dict(torch.load('weights_' + str(num_components) + '_' + str(num_epochs) + '.pth'))
     print("loaded file successfully")
 else:
@@ -339,15 +340,14 @@ else:
     optimizer = torch.optim.Adam(net.parameters(), lr=0.0005);
     loss_func = torch.nn.MSELoss();
 
-    max_training_samples = 10;
+    max_training_samples = 25;
 
     for epoch in range(num_epochs):
 
-      batch = torch.randint(min_year, max_year + 1, (max_training_samples, num_components*2));
-      batch = batch.float();
+      batch = (torch.randint(min_year, max_year + 1, (max_training_samples, num_components*2))).numpy();
       means, stddevs = ground_truth(batch, min_samples_per_station, global_years, global_jans, global_febs, global_mars, global_aprs, global_mays, global_juns, global_juls, global_augs, global_seps, global_octs, global_novs, global_decs);
 
-      gt = torch.zeros(max_training_samples, num_components*2, dtype=torch.float32);
+      gt = np.zeros((max_training_samples, num_components*2), np.float32);
 
       valid_count = 0;
 
@@ -355,13 +355,11 @@ else:
           if(math.isnan(means[i]) == False and math.isnan(stddevs[i]) == False):
             valid_count = valid_count + 1;
 
-      #print(valid_count);
-
       if(valid_count == 0):
         continue;
 
-      batch_trimmed = torch.zeros(valid_count, num_components*2, dtype=torch.float32);
-      gt_trimmed = torch.zeros(valid_count, num_components*2, dtype=torch.float32);
+      batch_trimmed = np.zeros((valid_count, num_components*2), np.float32);
+      gt_trimmed = np.zeros((valid_count, num_components*2), np.float32);
       
       index = 0;
 
@@ -372,8 +370,8 @@ else:
             batch_trimmed[index] = batch[i];
             index = index + 1;
 
-      x = Variable(batch_trimmed);
-      y = Variable(gt_trimmed);
+      x = Variable(torch.tensor(batch_trimmed));
+      y = Variable(torch.tensor(gt_trimmed));
 
       prediction = net(x)    
       loss = loss_func(prediction, y)
@@ -389,12 +387,10 @@ else:
 
 
 
-"""
-batch = threshold*(torch.rand((10, num_components*2),dtype=torch.float32) * 2 - 1)
-gt = ground_truth(batch.numpy())
-prediction = net(batch).detach().numpy()
+batch = torch.zeros(2*num_components);
+batch[0] = 2010;
+batch[1] = 2040;
 
-print(gt)
-print("\n")
+prediction = net(batch).detach();
+
 print(prediction)
-"""
