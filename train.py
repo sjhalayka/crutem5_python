@@ -101,7 +101,7 @@ def main():
 
 
 
-    num_epochs = 1000;
+    num_epochs = 10000;
 
     net = Net()
 
@@ -112,7 +112,7 @@ def main():
         print("training...")
 
         #optimizer = torch.optim.SGD(net.parameters(), lr=0.0001, momentum = 1)
-        optimizer = torch.optim.Adam(net.parameters(), lr=0.0001);
+        optimizer = torch.optim.Adam(net.parameters(), lr=0.000001);
         loss_func = torch.nn.MSELoss();
 
         for epoch in range(num_epochs):
@@ -126,7 +126,7 @@ def main():
           loss = loss_func(prediction, y)
 
           #if epoch % 500 == 0:
-          print(epoch,loss);
+          print(epoch, loss);
   
           optimizer.zero_grad()   # clear gradients for next train
           loss.backward()         # backpropagation, compute gradients
