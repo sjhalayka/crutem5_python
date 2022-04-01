@@ -91,9 +91,9 @@ def main():
 
     print("Read " + str(len(global_start_years)) + " span data."  );
 
-
-    #batch = batch[0:(len(global_start_years) - 1) // 2];
-    #gt = gt[0:(len(global_start_years) - 1) // 2];
+    # only use a portion of the span data for training
+    batch = batch[0:(len(global_start_years) - 1) // 2];
+    gt = gt[0:(len(global_start_years) - 1) // 2];
 
     print("Using " + str(batch.shape[0]) + " span data."  );
 
@@ -134,23 +134,22 @@ def main():
 
         torch.save(net.state_dict(), 'weights_' + str(1) + '_' + str(num_epochs) + '.pth')
 
-
-    batch = torch.zeros(2);
-    batch[0] = 1850;
-    batch[1] = 2020;
-    prediction = net(batch).detach();
+    batch = np.zeros((1, 2), np.float32);
+    batch[0][0] = 1850;
+    batch[0][1] = 2020;
+    prediction = net(torch.tensor(batch)).detach();
     print("1850 - 2020 temperature anomaly trend (tenths of degree per year, or equivalently degrees per decade)");
     print(prediction)
 
-    batch[0] = 1980;
-    batch[1] = 2020;
-    prediction = net(batch).detach();
+    batch[0][0] = 1980;
+    batch[0][1] = 2020;
+    prediction = net(torch.tensor(batch)).detach();
     print("1980 - 2020 temperature anomaly trend (tenths of degree per year, or equivalently degrees per decade)");
     print(prediction)
 
-    batch[0] = 2020;
-    batch[1] = 2040;
-    prediction = net(batch).detach();
+    batch[0][0] = 2020;
+    batch[0][1] = 2040;
+    prediction = net(torch.tensor(batch)).detach();
     print("2020 - 2040 temperature anomaly trend (tenths of degree per year, or equivalently degrees per decade)");
     print(prediction)
 
