@@ -92,8 +92,8 @@ def main():
     print("Read " + str(len(global_start_years)) + " span data."  );
 
     # only use a portion of the span data for training
-    batch = batch[0:(len(global_start_years) - 1) // 2];
-    gt = gt[0:(len(global_start_years) - 1) // 2];
+    #batch = batch[0:(len(global_start_years) - 1) // 2];
+    #gt = gt[0:(len(global_start_years) - 1) // 2];
 
     print("Using " + str(batch.shape[0]) + " span data."  );
 
@@ -117,16 +117,25 @@ def main():
 
         for epoch in range(num_epochs):
 
-          print(epoch);
+          num_samples_per_epoch = 100;
 
-          x = Variable(torch.tensor(batch));
-          y = Variable(torch.tensor(gt));
+          # get sub batch and sub gt
+          batch_sub = np.zeros((num_samples_per_epoch, 2), np.float32);
+          gt_sub = np.zeros((num_samples_per_epoch, 2), np.float32);
+
+          for i in range(num_samples_per_epoch):
+            index_a = randrange(len(global_start_years));
+            batch_sub[i] = batch[index_a];
+            gt_sub[i] = gt[index_a];
+
+          x = Variable(torch.tensor(batch_sub));
+          y = Variable(torch.tensor(gt_sub));
 
           prediction = net(x)
           loss = loss_func(prediction, y)
 
-          #if epoch % 500 == 0:
-          print(epoch, loss);
+          if epoch % 500 == 0:
+            print(epoch, loss);
   
           optimizer.zero_grad()   # clear gradients for next train
           loss.backward()         # backpropagation, compute gradients
