@@ -6,57 +6,14 @@ from torch.autograd import Variable
 import os.path
 from os import path
 
-
-
-
-num_components = 1 # we're dealing with scalars
-
-
-def gt_function(in_a, in_b, min_samples_per_station, p_station_ids, p_years, p_jans, p_febs, p_mars, p_aprs, p_mays, p_juns, p_juls, p_augs, p_seps, p_octs, p_novs, p_decs):
-
-    trends = [];
-
-    if(in_a > in_b):
-        temp = in_a;
-        in_a = in_b;
-        in_b = temp;
-    
-    print(str(in_a) + " " + str(in_b));
-
-    for i in range(len(p_station_ids)):
-        useful, trend = get_trend(in_a, in_b, min_samples_per_station, i, p_station_ids, p_years, p_jans, p_febs, p_mars, p_aprs, p_mays, p_juns, p_juls, p_augs, p_seps, p_octs, p_novs, p_decs)
-    
-        if(useful):
-            trends.append(trend);
-
-    if(len(trends) == 0):
-        return math.nan, math.nan;
-
-    return np.mean(trends), np.std(trends);
-   
-
-def ground_truth(batch, min_samples_per_stations, p_station_ids, p_years, p_jans, p_febs, p_mars, p_aprs, p_mays, p_juns, p_juls, p_augs, p_seps, p_octs, p_novs, p_decs):
-
-    means = [];
-    stddevs = [];
-
-    for i in range(batch.shape[0]):
-        mean, stddev = gt_function(batch[i][0], batch[i][1], min_samples_per_station, p_station_ids, p_years, p_jans, p_febs, p_mars, p_aprs, p_mays, p_juns, p_juls, p_augs, p_seps, p_octs, p_novs, p_decs);
-
-        means.append(mean);
-        stddevs.append(stddev);
- 
-    return means, stddevs;
-    
-
-
+from random import randrange
 
 
 class Net(torch.nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         self.hidden1 = torch.nn.Linear(2, 32);
-        self.hidden2 = torch.nn.Linear(32 , 16 ); 
+        self.hidden2 = torch.nn.Linear(32 , 16 );
         self.hidden3 = torch.nn.Linear(16 , 8 );
         self.predict = torch.nn.Linear(8 , 2);
 
@@ -68,309 +25,102 @@ class Net(torch.nn.Module):
         return x
 
 
-def get_trend(min_year, max_year, min_samples_per_station, station_index, p_global_station_ids, p_years, p_jans, p_febs, p_mars, p_aprs, p_mays, p_juns, p_juls, p_augs, p_seps, p_octs, p_novs, p_decs):
-
-    x = list()
-    y = list()
-
-    for i in range(len(p_years[station_index])):
-
-        if((p_years[station_index][i] < min_year) or (p_years[station_index][i] > max_year)):
-            continue;
-
-        if(p_jans[station_index][i] != -999):
-            x.append(p_years[station_index][i]);
-            y.append(p_jans[station_index][i]);
-
-        if(p_febs[station_index][i] != -999):
-            x.append(p_years[station_index][i]);
-            y.append(p_febs[station_index][i]);
-
-        if(p_mars[station_index][i] != -999):
-            x.append(p_years[station_index][i]);
-            y.append(p_mars[station_index][i]);
-
-        if(p_aprs[station_index][i] != -999):
-            x.append(p_years[station_index][i]);
-            y.append(p_aprs[station_index][i]);
-
-        if(p_mays[station_index][i] != -999):
-            x.append(p_years[station_index][i]);
-            y.append(p_mays[station_index][i]);
-
-        if(p_juns[station_index][i] != -999):
-            x.append(p_years[station_index][i]);
-            y.append(p_juns[station_index][i]);
-
-        if(p_juls[station_index][i] != -999):
-            x.append(p_years[station_index][i]);
-            y.append(p_juls[station_index][i]);
-
-        if(p_augs[station_index][i] != -999):
-            x.append(p_years[station_index][i]);
-            y.append(p_augs[station_index][i]);
-
-        if(p_seps[station_index][i] != -999):
-            x.append(p_years[station_index][i]);
-            y.append(p_seps[station_index][i]);
-
-        if(p_octs[station_index][i] != -999):
-            x.append(p_years[station_index][i]);
-            y.append(p_octs[station_index][i]);
-
-        if(p_novs[station_index][i] != -999):
-            x.append(p_years[station_index][i]);
-            y.append(p_novs[station_index][i]);
-
-        if(p_decs[station_index][i] != -999):
-            x.append(p_years[station_index][i]);
-            y.append(p_decs[station_index][i]);
-
-    if(len(x) == 0):
-        #print("No valid records in date range found");
-        return 0, 0.0;
-    #else:
-        #print(len(x));
-
-    # Go to next station if this one hasn't enough valid xy data
-    if(len(x) < min_samples_per_station):
-       #print("Not enough data for station " + str(sd.station_id))
-       return 0, 0.0;
-
-    # Save this station's trend
-
-    #slope, intercept = np.polyfit(x, y, 1);
-
-    x_mean = 0;
-    y_mean = 0;
-
-    for i in range(len(x)):
-        x_mean = x_mean + x[i];
-        y_mean = y_mean + y[i];
-
-    x_mean = x_mean / len(x);
-    y_mean = y_mean / len(x);
-
-    covariance = 0.0;
-    variance = 0.0;
-
-    for i in range(len(x)):
-        z = x[i] - x_mean;
-        covariance = covariance + z*(y[i] - y_mean);
-        variance = variance + z*z;
-
-    covariance = covariance / len(x);
-    variance = variance / len(x);
-
-    return 1, covariance / variance;
-
-
-
-
-
-
-
-
-
-
-
-
-
-min_samples_per_station = 12 * 20; # require a minimum of 20 years of data
-
-trends = [];
-
-
-
 
 def main():
 
-    global_station_ids = [];
-    global_years = [[]];
-    global_jans = [[]];
-    global_febs = [[]];
-    global_mars = [[]];
-    global_aprs = [[]];
-    global_mays = [[]];
-    global_juns = [[]];
-    global_juls = [[]];
-    global_augs = [[]];
-    global_seps = [[]];
-    global_octs = [[]];
-    global_novs = [[]];
-    global_decs = [[]];
+    global_start_years = [];
+    global_end_years = [];
+    global_means = [];
+    global_std_devs = [];
 
-    if path.exists('stat4.postqc.CRUTEM.5.0.1.0-202109.txt'):
-        file = open('stat4.postqc.CRUTEM.5.0.1.0-202109.txt');
+    if path.exists('span_data.txt'):
+        file = open('span_data.txt');
     else:
-        print("Could not find file...")
+        print("Could not find file span_data.txt")
         exit()
-
-    num_stations_read = 0;
-    min_year = 9999;
-    max_year = 0;
-
 
     while(1):
 
-        s = file.readline();
-        s = s.strip();
+        t = file.readline();
+        t = t.strip();
 
-        if(len(s) == 0):
+        if(len(t) == 0):
             break;
 
-        local_station_id = int(s[0:6]);
-        first_year = int(s[56:60]);
-        last_year = int(s[60:64]);
-
-        num_years = 1 + last_year - first_year;
-
-        local_years = [];
-        local_jans = [];
-        local_febs = [];
-        local_mars = [];
-        local_aprs = [];
-        local_mays = [];
-        local_juns = [];
-        local_juls = [];
-        local_augs = [];
-        local_seps = [];
-        local_octs = [];
-        local_novs = [];
-        local_decs = [];
-
-        for j in range(num_years):
-
-            t = file.readline();
-            t = t.strip();
-
-            if(len(t) == 0):
-                break;
+        tokens = list();
+        tokens = t.split();
         
-            year_tokens = list();
-            year_tokens = t.split();
-
-            year = int(year_tokens[0]);
-
-            if(year < min_year):
-                min_year = year;
-
-            if(year > max_year):
-                max_year = year;
-
-            jan = float(year_tokens[1]);  feb = float(year_tokens[2]);  mar = float(year_tokens[3]);
-            apr = float(year_tokens[4]);  may = float(year_tokens[5]);  jun = float(year_tokens[6]);
-            jul = float(year_tokens[7]);  aug = float(year_tokens[8]);  sep = float(year_tokens[9]); 
-            oct = float(year_tokens[10]); nov = float(year_tokens[11]); dec = float(year_tokens[12]);
-
-            local_years.append(year);
-            local_jans.append(jan);
-            local_febs.append(feb);
-            local_mars.append(mar);
-            local_aprs.append(apr);
-            local_mays.append(may);
-            local_juns.append(jun);
-            local_juls.append(jul);
-            local_augs.append(aug);
-            local_seps.append(sep);
-            local_octs.append(oct);
-            local_novs.append(nov);
-            local_decs.append(dec);
-        
-        global_station_ids.append(local_station_id);
-        global_years.append(local_years);
-        global_jans.append(local_jans);
-        global_febs.append(local_febs);
-        global_mars.append(local_mars);
-        global_aprs.append(local_aprs);
-        global_mays.append(local_mays);
-        global_juns.append(local_juns);
-        global_juls.append(local_juls);
-        global_augs.append(local_augs);
-        global_seps.append(local_seps);
-        global_octs.append(local_octs);
-        global_novs.append(local_novs);
-        global_decs.append(local_decs);
+        global_start_years.append(float(tokens[0]));
+        global_end_years.append(float(tokens[1]));
+        global_means.append(float(tokens[2]));
+        global_std_devs.append(float(tokens[3]));
 
 
 
-        num_stations_read = num_stations_read + 1
+    batch = np.zeros((len(global_start_years), 2), np.float32);
+    gt = np.zeros((len(global_start_years), 2), np.float32);
+
+    for i in range(len(global_start_years)):
+        batch[i][0] = global_start_years[i];
+        batch[i][1] = global_end_years[i];
+        gt[i][0] = global_means[i];
+        gt[i][1] = global_std_devs[i];
+
+    print("Randomizing")
+
+    for i in range(500000):
+        index_a = randrange(len(global_start_years));
+        index_b = randrange(len(global_start_years));
+
+        temp_batchi0 = batch[index_a][0];
+        temp_batchi1 = batch[index_a][1];
+        temp_gti0 = gt[index_a][0];
+        temp_gti1 = gt[index_a][1];
+
+        batch[index_a][0] = batch[index_b][0];
+        batch[index_a][1] = batch[index_b][1];
+        gt[index_a][0] = gt[index_b][0];
+        gt[index_a][1] = gt[index_b][1];
+
+        batch[index_b][0] = temp_batchi0;
+        batch[index_b][1] = temp_batchi1;
+        gt[index_b][0] = temp_gti0;
+        gt[index_b][1] = temp_gti1;
+
+    print("Done randomizing")
+
+    print("Read " + str(len(global_start_years)) + " span data."  );
 
 
+    #batch = batch[0:(len(global_start_years) - 1) // 2];
+    #gt = gt[0:(len(global_start_years) - 1) // 2];
 
-        if(num_stations_read % 1000 == 0):
-            print(num_stations_read);
-
-
-
-    print(len(global_station_ids));
-
-
-    for i in range(len(global_station_ids)):
-
-        useful, trend = get_trend(min_year, max_year, min_samples_per_station, i, global_station_ids, global_years, global_jans, global_febs, global_mars, global_aprs, global_mays, global_juns, global_juls, global_augs, global_seps, global_octs, global_novs, global_decs )
-    
-        if(useful):
-            trends.append(trend);
-
-
-    print(str(num_stations_read) + " stations processed altogether.");
-    print(str(len(trends)) + " stations used.");
-    print(str(np.mean(trends)) + " +/-" + str(np.std(trends)));
+    print("Using " + str(batch.shape[0]) + " span data."  );
 
 
 
 
 
-
-
-
-    torch.manual_seed(123);
-
-    max_training_samples = 25;
     num_epochs = 1000;
 
     net = Net()
 
-    if path.exists('weights_' + str(num_components) + '_' + str(num_epochs) + '.pth'):
-        net.load_state_dict(torch.load('weights_' + str(num_components) + '_' + str(num_epochs) + '.pth'))
+    if path.exists('weights_' + str(1) + '_' + str(num_epochs) + '.pth'):
+        net.load_state_dict(torch.load('weights_' + str(1) + '_' + str(num_epochs) + '.pth'))
         print("loaded file successfully")
     else:
         print("training...")
 
-        optimizer = torch.optim.Adam(net.parameters(), lr=0.0005);
+        #optimizer = torch.optim.SGD(net.parameters(), lr=0.0001, momentum = 1)
+        optimizer = torch.optim.Adam(net.parameters(), lr=0.0001);
         loss_func = torch.nn.MSELoss();
 
         for epoch in range(num_epochs):
 
-          batch = (torch.randint(min_year, max_year + 1, (max_training_samples, num_components*2))).numpy();
-          means, stddevs = ground_truth(batch, min_samples_per_station, global_station_ids, global_years, global_jans, global_febs, global_mars, global_aprs, global_mays, global_juns, global_juls, global_augs, global_seps, global_octs, global_novs, global_decs);
+          print(epoch);
 
-          gt = np.zeros((max_training_samples, num_components*2), np.float32);
-
-          valid_count = 0;
-
-          for i in range(gt.shape[0]):
-              if(math.isnan(means[i]) == False and math.isnan(stddevs[i]) == False):
-                valid_count = valid_count + 1;
-
-          if(valid_count == 0):
-            continue;
-
-          batch_trimmed = np.zeros((valid_count, num_components*2), np.float32);
-          gt_trimmed = np.zeros((valid_count, num_components*2), np.float32);
-      
-          index = 0;
-
-          for i in range(gt.shape[0]):
-              if(math.isnan(means[i]) == False and math.isnan(stddevs[i]) == False):
-                gt_trimmed[index][0] = means[i];
-                gt_trimmed[index][1] = stddevs[i];
-                batch_trimmed[index] = batch[i];
-                index = index + 1;
-
-          x = Variable(torch.tensor(batch_trimmed));
-          y = Variable(torch.tensor(gt_trimmed));
+          x = Variable(torch.tensor(batch));
+          y = Variable(torch.tensor(gt));
 
           prediction = net(x)
           loss = loss_func(prediction, y)
@@ -382,21 +132,32 @@ def main():
           loss.backward()         # backpropagation, compute gradients
           optimizer.step()        # apply gradients
 
-        torch.save(net.state_dict(), 'weights_' + str(num_components) + '_' + str(num_epochs) + '.pth')
+        torch.save(net.state_dict(), 'weights_' + str(1) + '_' + str(num_epochs) + '.pth')
 
 
-
-    batch = torch.zeros(2*num_components);
-    batch[0] = 1980;
-    batch[1] = 2021;
-
+    batch = torch.zeros(2);
+    batch[0] = 1850;
+    batch[1] = 2020;
     prediction = net(batch).detach();
+    print("1850 - 2020 temperature anomaly trend (tenths of degree per year, or equivalently degrees per decade)");
+    print(prediction)
 
-    print("Temperature anomaly trend (tenths of degree per year, or equivalently degrees per decade)");
+    batch[0] = 1980;
+    batch[1] = 2020;
+    prediction = net(batch).detach();
+    print("1980 - 2020 temperature anomaly trend (tenths of degree per year, or equivalently degrees per decade)");
+    print(prediction)
+
+    batch[0] = 2020;
+    batch[1] = 2040;
+    prediction = net(batch).detach();
+    print("2020 - 2040 temperature anomaly trend (tenths of degree per year, or equivalently degrees per decade)");
     print(prediction)
 
 
 
 
-
 main();
+
+
+
